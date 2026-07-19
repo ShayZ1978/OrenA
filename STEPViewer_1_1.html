@@ -1621,9 +1621,9 @@ AUTOBAHNJS_VERSION="0.8.2.1";globalObject=globalThis,function(n,t){n.ab=t(n,n.wh
 
               <div class="cl-cat">Navigation</div>
               <ul>
-                <li>Creo-style trackball — free unlimited rotation, Creo mouse buttons (middle spin, Shift+middle pan, Ctrl+middle zoom), zoom to cursor.</li>
+                <li>Free trackball navigation — unlimited rotation, CAD-style mouse buttons (middle spin, Shift+middle pan, Ctrl+middle zoom), zoom to cursor.</li>
                 <li>One shared rotation center for mouse and 3D mouse, marked by an RGB-axis pivot glyph.</li>
-                <li>3Dconnexion SpaceMouse support through the 3DxWare driver — always on, auto-reconnect.</li>
+                <li>3D mouse support through the vendor driver — always on, auto-reconnect.</li>
                 <li>ViewCube: click faces, edges or corners (visible dots, hover highlight) to orient; faces colored by axis; roll / tip arrows and home.</li>
                 <li>X/Y/Z orientation triad at bottom-left, colors matched to the ViewCube.</li>
                 <li>Views menu: Isometric / Dimetric / Trimetric, named views, previous view, zoom window; Normal To a face (Ctrl+8).</li>
@@ -1639,7 +1639,7 @@ AUTOBAHNJS_VERSION="0.8.2.1";globalObject=globalThis,function(n,t){n.ab=t(n,n.wh
 
               <div class="cl-cat">Display</div>
               <ul>
-                <li>Shadows menu (Inventor-style): ground shadow, object shadows, ambient occlusion.</li>
+                <li>Shadows menu: ground shadow, object shadows, ambient occlusion.</li>
                 <li>Redesigned toolbar pictograms — the three display styles share one cube icon.</li>
                 <li>Background toggle hides backdrop and grid together; off by default.</li>
                 <li>Mass properties, graphics preferences, hidden-lines and tangent-edge display styles.</li>
@@ -1665,7 +1665,7 @@ AUTOBAHNJS_VERSION="0.8.2.1";globalObject=globalThis,function(n,t){n.ab=t(n,n.wh
               </ul>
             </div>
 
-            <p class="about-credits">Built with three.js, occt-import-js (Open CASCADE) and 3DconnexionJS.</p>
+            <p class="about-credits">Built with three.js and occt-import-js (Open CASCADE).</p>
             <label class="about-toggle">
               <input type="checkbox" id="about-show-logos" checked>
               Show SPT-ME logo <span class="about-toggle-hint">— untick for external-use screenshots</span>
@@ -1854,7 +1854,7 @@ const SLOT_COLORS = [0xffa726, 0x29b6f6];
 const HOVER_COLOR = 0xffee58;
 const MEASURE_COLOR = 0xff5252;
 
-// Dimension styling — SolidWorks-like: thin charcoal witness/dimension lines,
+// Dimension styling — CAD-drawing look: thin charcoal witness/dimension lines,
 // solid arrowheads, gold highlight while dragging. Sizes are in *screen pixels*
 // and converted to world units each frame so the annotation stays crisp at any zoom.
 const DIM_COLOR = 0x272219;
@@ -1906,22 +1906,22 @@ function invalidate(ms = 400) {
 }
 
 // =====================================================================
-// CreoControls — Creo-style camera controls replacing OrbitControls.
+// CadControls — CAD-style camera controls replacing OrbitControls.
 // Free virtual-trackball spin (no pitch clamp, horizon not locked, tumbles
-// past the poles forever), Creo button map (middle = spin, Shift+middle =
+// past the poles forever), CAD button map (middle = spin, Shift+middle =
 // pan, Ctrl+middle = zoom, wheel = zoom-to-cursor; left-drag also spins,
 // right-drag pans), one-finger orbit + two-finger pinch/pan on touch.
 // Nothing here re-normalizes or clamps the camera — a hard requirement for
-// unrestricted SpaceMouse tumbling (the driver writes raw view matrices).
+// unrestricted 3D-mouse tumbling (the driver writes raw view matrices).
 // =====================================================================
-class CreoControls extends THREE.EventDispatcher {
+class CadControls extends THREE.EventDispatcher {
   constructor(object, domElement) {
     super();
     this.object = object;
     this.domElement = domElement;
     this.target = new THREE.Vector3();
     this.enabled = true;
-    this.enableDamping = false; // API compat; Creo has no inertia
+    this.enableDamping = false; // API compat; no inertia by design
     this.dampingFactor = 0;
     this.rotateSpeed = 1.0;
     this.onSpinStart = null;    // hooks for the spin-centre glyph
@@ -2014,8 +2014,8 @@ class CreoControls extends THREE.EventDispatcher {
   // position AND camera.up about the spin centre — no clamps of any kind.
   // Rotate camera position AND orientation about the shared spin centre
   // (this.target) as a rigid body — no lookAt, no re-centering. An off-axis
-  // pivot therefore stays glued to its screen position (Creo behaviour), and
-  // the same world point serves the SpaceMouse driver as pivot.
+  // pivot therefore stays glued to its screen position, and the same world
+  // point serves the 3D-mouse driver as pivot.
   _spin(dx, dy) {
     if (!dx && !dy) return;
     const h = this.domElement.clientHeight || 1;
@@ -2032,8 +2032,7 @@ class CreoControls extends THREE.EventDispatcher {
     this._changed();
   }
 
-  // Pan moves the camera only — the spin centre stays attached to the model,
-  // exactly like Creo's spin centre symbol.
+  // Pan moves the camera only — the spin centre stays attached to the model.
   _pan(dx, dy) {
     const wpp = this._worldPerPixel();
     const right = new THREE.Vector3().setFromMatrixColumn(this.object.matrixWorld, 0);
@@ -2150,7 +2149,7 @@ function initViewer() {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.localClippingEnabled = true;
   viewerEl.appendChild(renderer.domElement);
-  // Focusable canvas: 3DconnexionJS gates SpaceMouse motion on element focus.
+  // Focusable canvas: the 3D-mouse library gates motion on element focus.
   renderer.domElement.tabIndex = 0;
   renderer.domElement.style.outline = 'none';
 
@@ -2162,8 +2161,8 @@ function initViewer() {
   cameraOrtho.position.set(1, -1, 1);
   camera = cameraOrtho;
 
-  controls = new CreoControls(camera, renderer.domElement);
-  // Creo-style spin-centre symbol while spinning with the mouse.
+  controls = new CadControls(camera, renderer.domElement);
+  // Spin-centre symbol shown while spinning with the mouse.
   controls.onSpinStart = () => {
     const g = smPivotGlyph();
     g.position.copy(controls.target);
@@ -2234,7 +2233,7 @@ function setProjection(mode) {
   if (mode === projectionMode) return;
   const target = controls.target.clone();
   // Carry the true current up across the camera swap — resetting to +Z here
-  // would snap the horizon after free tumbling (mouse trackball or SpaceMouse).
+  // would snap the horizon after free tumbling (mouse trackball or 3D mouse).
   const upVec = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 1).normalize();
   if (mode === 'ortho') {
     const dist = cameraPersp.position.distanceTo(target) || 1;
@@ -2273,7 +2272,7 @@ function animate(time) {
   const moved = controls.update();
   if (moved) invalidate(250);
   processViewTween();
-  // While the SpaceMouse cap is deflected we clock the driver with the frame
+  // While the 3D-mouse cap is deflected we clock the driver with the frame
   // time (frame.timingSource = 1) and keep the renderer hot.
   if (smMotion && sm) {
     sm.update3dcontroller({ frame: { time: time } });
@@ -3698,7 +3697,7 @@ function analyzeRelation(A, B) {
   return { rows, snapDir };
 }
 
-// ===== Dimension annotation (SolidWorks-style) =====
+// ===== Dimension annotation =====
 
 // World units that map to one screen pixel at a given world point — lets us keep
 // arrowheads, gaps and the default offset a constant on-screen size at any zoom.
@@ -3925,7 +3924,7 @@ function computeMeasurement() {
   // Analyze how the two entities are oriented relative to one another.
   const rel = analyzeRelation(A, B);
   // When the features are parallel and a plane is involved, force the linear dimension
-  // to be exactly perpendicular to both (the SolidWorks rule for parallel geometry).
+  // to be exactly perpendicular to both (the standard rule for parallel geometry).
   if (rel.snapDir) {
     const signed = b.clone().sub(a).dot(rel.snapDir);
     if (Math.abs(signed) > 1e-9) b.copy(a).addScaledVector(rel.snapDir, signed);
@@ -4454,9 +4453,9 @@ function onCanvasPointerCancel() {
   pointerDownPos = null;
 }
 
-// SolidWorks-style: hover a component and press Tab to hide it; Shift+Tab shows all hidden.
+// Hover a component and press Tab to hide it; Shift+Tab shows all hidden.
 function onKeyDown(e) {
-  // Normal To hovered face (SolidWorks: Ctrl+8)
+  // Normal To hovered face (Ctrl+8)
   if ((e.ctrlKey || e.metaKey) && e.key === '8') {
     e.preventDefault();
     if (lastPointer) {
@@ -4476,7 +4475,7 @@ function onKeyDown(e) {
   }
 }
 
-// SolidWorks-style right-click / long-press context menu in the graphics area.
+// Right-click / long-press context menu in the graphics area.
 function openContextMenu(e) {
   if (!currentParts.length) return;
   const part = partAt(e);
@@ -4931,7 +4930,7 @@ function buildPartsTree() {
     partsTreeEl.innerHTML = '<div class="fm-empty">No file loaded</div>';
     return;
   }
-  // One top-level node per loaded model (root name = file name, like SolidWorks).
+  // One top-level node per loaded model (root name = file name).
   modelRoots.forEach((mr) => partsTreeEl.appendChild(renderTreeNode(mr.root, 0)));
   refreshTreeEyes();
 }
@@ -4965,7 +4964,7 @@ function applySelectionTint(part, on) {
           intensity: m.emissiveIntensity,
         };
       }
-      // SolidWorks-style: the whole part reads clearly blue while selected.
+      // The whole part reads clearly blue while selected.
       m.color.setHex(0x2f6bff);
       m.emissive.setHex(SELECT_EMISSIVE);
       m.emissiveIntensity = 0.35;
@@ -5022,7 +5021,7 @@ function setSelectedParts(parts, sourceRow = null) {
   invalidate();
 }
 
-// Display style follows SolidWorks: Shaded With Edges / Shaded / Wireframe.
+// Display styles: Shaded With Edges / Shaded / Wireframe.
 // Meshes stay .visible = !hidden in every style (so raycasting/measure keep working);
 // "wireframe" is rendered as hidden-line style by turning off face colorWrite while
 // keeping depth, and edge lines gate their drawing via material.visible.
@@ -5388,7 +5387,7 @@ function setBackground(on) {
 }
 bgBtn.addEventListener('click', () => setBackground(!backgroundOn));
 
-// ----- Shadows (Inventor-style: Ground / Object / Ambient + All) -----
+// ----- Shadows (Ground / Object / Ambient + All) -----
 const shadowSettings = { ground: false, object: false, ambient: false };
 let shadowLight = null;
 let shadowGround = null;
@@ -5457,7 +5456,7 @@ function updateGroundShadow() {
   const maxDim = Math.max(s.x, s.y, s.z) || 1;
   shadowGround.position.set(c.x, c.y, currentBox.min.z - maxDim * 2e-3);
   shadowGround.scale.setScalar(maxDim * 4);
-  // Nearly overhead light — Inventor-like shadow directly beneath the model.
+  // Nearly overhead light — soft shadow directly beneath the model.
   shadowLight.position.set(c.x + maxDim * 0.22, c.y - maxDim * 0.13, currentBox.max.z + maxDim * 1.2);
   shadowLight.target.position.copy(c);
   shadowLight.target.updateMatrixWorld();
@@ -6494,13 +6493,12 @@ function renderMassProps() {
 }
 
 // =====================================================================
-// 3Dconnexion SpaceMouse — via the official 3DconnexionJS library and the
-// local 3DxWare driver (wss://127.51.68.120, WAMP). The DRIVER computes all
-// camera motion (same navigation engine as SolidWorks); we only expose the
-// scene/camera state through the getter/setter contract below and apply the
-// view matrices it writes back.
+// 3D mouse — via the vendor's bundled controller library and its local
+// driver (wss://127.51.68.120, WAMP). The DRIVER computes all camera
+// motion; we only expose the scene/camera state through the getter/setter
+// contract below and apply the view matrices it writes back.
 // =====================================================================
-const spaceMouseBtn = document.getElementById('spacemouse-btn');
+const threeDMouseBtn = document.getElementById('threedmouse-btn');
 let sm = null;              // _3Dconnexion instance
 let smState = 'off';        // off | connecting | on
 let smMotion = false;
@@ -6510,7 +6508,7 @@ const smLook = { origin: new THREE.Vector3(), direction: new THREE.Vector3(), ap
 
 function smSetState(s) {
   smState = s;
-  if (spaceMouseBtn) spaceMouseBtn.classList.toggle('active', s === 'on');
+  if (threeDMouseBtn) threeDMouseBtn.classList.toggle('active', s === 'on');
 }
 
 // Spin-centre marker: small RGB arrow triad from a black dot (compact, solid
@@ -6660,7 +6658,7 @@ const smClient = {
   setViewTarget(data) { controls.target.set(data[0], data[1], data[2]); },
   setPivotPosition(data) {
     // If the driver does place its own pivot (e.g. app-pivot unsupported by this
-    // 3DxWare version), adopt it as the shared spin centre so the mouse rotates
+    // driver version), adopt it as the shared spin centre so the mouse rotates
     // about the very same point the glyph shows.
     controls.target.set(data[0], data[1], data[2]);
     smPivotGlyph().position.set(data[0], data[1], data[2]);
@@ -6708,10 +6706,10 @@ function smConnectDirect() {
   );
 }
 
-function enableSpaceMouse(manual) {
+function enable3DMouse(manual) {
   if (smState !== 'off') return;
   if (typeof _3Dconnexion === 'undefined') {
-    if (manual) showToast('3Dconnexion library not loaded');
+    if (manual) showToast('3D-mouse library not loaded');
     return;
   }
   smSetState('connecting');
@@ -6723,11 +6721,11 @@ function enableSpaceMouse(manual) {
   } catch (e) {
     smSetState('off');
     sm = null;
-    if (manual) showToast('3DxWare driver not reachable — is the 3Dconnexion software running?', 3600);
+    if (manual) showToast('3D-mouse driver not reachable — is the vendor driver software running?', 3600);
   }
 }
 
-function disableSpaceMouse() {
+function disable3DMouse() {
   if (sm) {
     try { if (typeof sm.delete3dmouse === 'function') sm.delete3dmouse(); } catch (e) { /* already gone */ }
   }
@@ -6739,9 +6737,10 @@ function disableSpaceMouse() {
   invalidate();
 }
 
-// The SpaceMouse is always on — no toolbar toggle. Connection is attempted at
+// The 3D mouse is always on — no toolbar toggle. Connection is attempted at
 // startup and silently re-attempted while disconnected (driver restarts etc.).
-// Escape hatch for scripted captures: localStorage stepviewer.spacemouse = '0'.
+// Escape hatch for scripted captures: localStorage stepviewer.spacemouse = '0'
+// (key name kept for compatibility with existing saved settings).
 
 // ----- About dialog -----
 const aboutOverlay = document.getElementById('about-overlay');
@@ -6871,14 +6870,14 @@ try {
   if (saved || legacyGround) setShadowOptions(Object.assign({ ground: legacyGround }, saved || {}));
 } catch (e) { /* storage unavailable */ }
 
-// SpaceMouse: always on. Connect now and keep retrying quietly while off.
-function spaceMouseWanted() {
+// 3D mouse: always on. Connect now and keep retrying quietly while off.
+function threeDMouseWanted() {
   try { return localStorage.getItem('stepviewer.spacemouse') !== '0'; } catch (e) { return true; }
 }
-if (spaceMouseWanted()) enableSpaceMouse(false);
+if (threeDMouseWanted()) enable3DMouse(false);
 setInterval(() => {
-  if (smState === 'off' && spaceMouseWanted()) {
-    enableSpaceMouse(false);
+  if (smState === 'off' && threeDMouseWanted()) {
+    enable3DMouse(false);
   } else if (smState === 'connecting' && performance.now() - smConnectT0 > 15000) {
     // Wedged mid-handshake — hard reset so the next tick retries cleanly.
     sm = null;
@@ -6911,7 +6910,7 @@ if (new URLSearchParams(location.search).has('debug')) {
     get explodeFactor() { return explodeFactor; },
     get displayQuality() { return displayQuality; },
     get displayStyle() { return displayStyle; },
-    get spaceMouse() { return { state: smState, motion: smMotion, reads: smReads, lib: typeof _3Dconnexion !== 'undefined' }; },
+    get threeDMouse() { return { state: smState, motion: smMotion, reads: smReads, lib: typeof _3Dconnexion !== 'undefined' }; },
     forceRender() { renderFrame(); },
     classifyAll() {
       const tally = { plane: 0, cylinder: 0, generic: 0 };
